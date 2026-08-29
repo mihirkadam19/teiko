@@ -70,3 +70,32 @@ class ResponderComparison(QueryHelper):
             conn,
         )
         return freq.merge(meta, on="sample", how="inner")
+
+
+class BaselineSubset(QueryHelper):
+    """Part 4 baseline melanoma/miraclib/PBMC samples.
+
+    Columns: project_id, subject_id, sample_id, response, sex.
+    One row per sample.
+    """
+
+    def _fetch(self, conn) -> pd.DataFrame:
+        return pd.read_sql(
+            """
+            SELECT s.project_id AS project_id,
+                   s.subject_id AS subject_id,
+                   s.sample_id  AS sample_id,
+                   e.response    AS response,
+                   p.sex         AS sex
+            FROM Sample s
+            JOIN Enrollment e ON e.project_id = s.project_id
+                             AND e.subject_id = s.subject_id
+            JOIN Person p     ON p.subject_id = s.subject_id
+            WHERE s.sample_type = 'PBMC'
+              AND e.condition   = 'melanoma'
+              AND e.treatment   = 'miraclib'
+              AND s.time_from_treatment_start = 0
+            """,
+            conn,
+        )
+
