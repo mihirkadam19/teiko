@@ -99,3 +99,31 @@ class BaselineSubset(QueryHelper):
             conn,
         )
 
+
+class AverageBCell(QueryHelper):
+    """Bob's question: mean baseline b_cell count for melanoma male responders.
+
+    Filters: condition == 'melanoma', sex == 'M', response == 'yes', time_from_treatment_start == 0
+    """
+
+    def _fetch(self, conn) -> pd.DataFrame:
+        return pd.read_sql(
+            """
+            SELECT AVG(cc.count) AS avg_bcell
+            FROM Sample s
+            JOIN Enrollment e ON e.project_id = s.project_id
+                             AND e.subject_id = s.subject_id
+            JOIN Person p     ON p.subject_id = s.subject_id
+            JOIN CellCount cc ON cc.sample_id = s.sample_id
+            WHERE e.condition = 'melanoma'
+              AND p.sex       = 'M'
+              AND e.response  = 'yes'
+              AND s.time_from_treatment_start = 0
+              AND cc.cell_type = 'b_cell'
+            """,
+            conn,
+        )
+
+    def value(self, conn) -> float:
+        """The average b_cell count as a float rounded to 2 dp."""
+        return round(float(self.run(conn)["avg_bcell"].iloc[0]), 2)
