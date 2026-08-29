@@ -49,3 +49,24 @@ class FrequencyTable(QueryHelper):
 
 
 
+
+class ResponderComparison(QueryHelper):
+    """Part 3 frequency table restricted to melanoma/miraclib/PBMC samples,
+    with response ('yes'/'no') attached. One row per (sample, population)."""
+
+    def _fetch(self, conn) -> pd.DataFrame:
+        freq = FrequencyTable().run(conn)
+        meta = pd.read_sql(
+            """
+            SELECT s.sample_id AS sample, e.response AS response
+            FROM Sample s
+            JOIN Enrollment e ON e.project_id = s.project_id
+                             AND e.subject_id = s.subject_id
+            WHERE e.condition = 'melanoma'
+              AND e.treatment = 'miraclib'
+              AND s.sample_type = 'PBMC'
+              AND e.response IN ('yes', 'no')
+            """,
+            conn,
+        )
+        return freq.merge(meta, on="sample", how="inner")

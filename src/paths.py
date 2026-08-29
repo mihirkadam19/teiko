@@ -23,9 +23,6 @@ STATS_RESULTS_PATH = os.path.join(OUTPUT_DIR, "part3_stats_results.csv")
 BOXPLOT_PATH = os.path.join(OUTPUT_DIR, "part3_boxplot.png")
 RESPONDER_SUMMARY_PATH = os.path.join(OUTPUT_DIR, "part3_responder_summary.txt")
 
-BASELINE_SUBSET_PATH = os.path.join(OUTPUT_DIR, "part4_baseline_subset.csv")
-BASELINE_SUMMARY_PATH = os.path.join(OUTPUT_DIR, "part4_baseline_summary.txt")
-AVG_BCELL_PATH = os.path.join(OUTPUT_DIR, "avg_bcell.txt")
 
 
 def ensure_output_dir() -> None:
