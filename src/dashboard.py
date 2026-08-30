@@ -28,6 +28,12 @@ from src.helpers import (
 from src.paths import DB_PATH
 from src.analysis.responder_stats import ALPHA, make_boxplot, run_significance_tests
 from src.analysis.subset_analysis import summarize_baseline_subset
+from src.paths import DB_PATH
+
+if not os.path.exists(DB_PATH):
+    import load_data
+    load_data.main()
+
 
 
 pd.set_option("styler.render.max_elements", 500_000)  
