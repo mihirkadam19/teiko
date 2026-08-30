@@ -139,7 +139,7 @@ src/
     avg_bcell.py                     average baseline B-cell count
   dashboard.py               Streamlit app (Parts 2-4) — wiring only, no analysis logic
 
-output/                      generated artifacts (git-ignored)
+output/                      generated artifacts
 ```
 
 ### Why it is laid out this way
