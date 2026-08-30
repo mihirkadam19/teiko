@@ -125,3 +125,8 @@ We split the analysis by timepoint because each subject contributes a sample at 
 This test does not assume the data follows a normal distribution. That is a safe choice since cell percentages are bounded between 0 and 100 and tend to be skewed. It is also not easily thrown off by outliers.
 
 Since we are running 5 populations across 3 timepoints, that is 15 separate tests in total, and there is a higher chance that at least one shows a significant result just by chance. To guard against this, we multiply each p value by 15, capping at 1.0. This is called a Bonferroni correction. It is a conservative way of saying we should trust a result only if it still looks significant even after accounting for the fact that we ran many tests.
+
+
+### Subset Analysis (Part 4)
+Class `BaselineSubset` fetches the baseline subset that identifies all melanoma PBMC samples at baseline (time_from_treatment_start is 0) from patients who have been treated with miraclib. This addresses the first part of the requirement directly.
+To address the second part, no additional queries are written since the information can be filtered out directly from the baseline subset via pandas df. This reduces DB calls to just one single call, and is more memory efficient since we are working with just one df.
