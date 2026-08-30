@@ -1,4 +1,4 @@
-# Teiko — Cell Count Data Pipeline
+# Teiko Cell Count Data Pipeline
 
 A small end-to-end pipeline over `cell-count.csv`: load the CSV into a normalized
 SQLite database, run the analyses (Parts 2–4), and serve the results in an
@@ -22,6 +22,38 @@ make dashboard   # start the Streamlit server
 `load_data.py` drops and recreates the tables each time, so no duplicate rows
 accumulate.
 
+### Running each step individually (without `make`)
+
+The `make` targets are thin wrappers around the commands below, so you can run
+everything directly (e.g. on Windows / PowerShell, where `make` may be absent).
+Run all commands from the repo root.
+
+```bash
+# --- setup (= make setup) -------------------------------------------------
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+
+# --- pipeline (= make pipeline) -----------------------------------------
+# Part 1 — build + populate cell_counts.db from cell-count.csv
+python load_data.py
+
+# Part 2 — per-sample relative frequency of each cell population
+python -m src.analysis.freq_analysis
+
+# Part 3 — responders vs non-responders, Mann-Whitney U per population × timepoint
+python -m src.analysis.responder_stats
+
+# Part 4a — baseline melanoma / miraclib / PBMC subset + breakdowns
+python -m src.analysis.subset_analysis
+
+# Part 4b — average baseline B-cell count for melanoma male responders
+python -m src.analysis.avg_bcell
+
+# --- dashboard (= make dashboard) --------------------------------------
+python -m streamlit run src/dashboard.py
+```
+
+
 ### What `make pipeline` produces
 
 | Step | Command | Output |
@@ -34,6 +66,13 @@ accumulate.
 
 `cell_counts.db` and `output/` are included as output artifacts.
 `make dashboard` works on a fresh checkout without `make pipeline`.
+
+
+Every analysis reads `cell_counts.db`, so **Part 1 must have run at least once
+first** (the analyses do not rebuild the DB; only the dashboard does). The
+analysis steps are otherwise independent of each other and safe to re-run. Each
+writes only its own artifacts (see the table above) and prints the path of every
+file it wrote. None of them take command-line arguments.
 
 ### Headline results (current dataset)
 
@@ -97,7 +136,7 @@ src/
     freq_analysis.py         Part 2  runner -> part2_frequency_table.csv
     responder_stats.py       Part 3  Mann-Whitney U per population × timepoint + boxplots
     subset_analysis.py       Part 4a baseline subset breakdowns
-    avg_bcell.py             Part 4b average baseline B-cell count
+    avg_bcell.py                     average baseline B-cell count
   dashboard.py               Streamlit app (Parts 2-4) — wiring only, no analysis logic
 
 output/                      generated artifacts (git-ignored)
