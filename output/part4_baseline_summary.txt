@@ -1,0 +1,13 @@
+=== Part 4: Baseline melanoma / PBMC / miraclib samples ===
+
+Samples per project:
+  prj1       384
+  prj3       272
+
+Distinct subjects by response:
+  no         325
+  yes        331
+
+Distinct subjects by sex:
+  F          312
+  M          344

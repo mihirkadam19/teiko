@@ -1,0 +1,33 @@
+Mann Whitney U (responder vs non responder), melanoma / miraclib / PBMC,
+by timepoint. Bonferroni correction applied across all 15 tests (5 populations x 3 timepoints).
+
+--- t = 0 ---
+population  n_responders  n_non_responders  statistic  p_value  significant  p_value_bonferroni
+    b_cell           331               325    55238.5   0.5501        False                 1.0
+cd8_t_cell           331               325    52204.0   0.5142        False                 1.0
+cd4_t_cell           331               325    54412.5   0.7969        False                 1.0
+   nk_cell           331               325    53429.0   0.8827        False                 1.0
+  monocyte           331               325    50759.5   0.2122        False                 1.0
+Significant at raw p < 0.05: none
+Still significant after Bonferroni (x15): none
+
+--- t = 7 ---
+population  n_responders  n_non_responders  statistic  p_value  significant  p_value_bonferroni
+    b_cell           331               325    50245.5   0.1445        False              1.0000
+cd8_t_cell           331               325    52645.5   0.6381        False              1.0000
+cd4_t_cell           331               325    59058.0   0.0299         True              0.4484
+   nk_cell           331               325    50184.0   0.1376        False              1.0000
+  monocyte           331               325    52091.0   0.4847        False              1.0000
+Significant at raw p < 0.05: cd4_t_cell
+Still significant after Bonferroni (x15): none
+
+--- t = 14 ---
+population  n_responders  n_non_responders  statistic  p_value  significant  p_value_bonferroni
+    b_cell           331               325    47840.5   0.0143         True              0.2141
+cd8_t_cell           331               325    54591.5   0.7406        False              1.0000
+cd4_t_cell           331               325    58099.0   0.0757        False              1.0000
+   nk_cell           331               325    51339.5   0.3132        False              1.0000
+  monocyte           331               325    52680.0   0.6483        False              1.0000
+Significant at raw p < 0.05: b_cell
+Still significant after Bonferroni (x15): none
+
