@@ -29,8 +29,15 @@ ALPHA = 0.05        # threshold for p value
 N_TESTS = len(POPULATIONS)
 
 
+RESPONSE_ORDER = ["no", "yes"]
+RESPONSE_COLORS = {"no": "#636EFA", "yes": "#EF553B"}
+
+
 def make_boxplot(df):
-    """Return a plotly Figure of percentage by response, one facet per population."""
+    """Return a plotly Figure of percentage by response, one facet per population.
+
+    Used by the dashboard for the interactive chart.
+    """
     import plotly.express as px
 
     fig = px.box(
@@ -40,13 +47,60 @@ def make_boxplot(df):
         color="response",
         facet_col="population",
         facet_col_wrap=5,
-        category_orders={"response": ["no", "yes"]},
+        category_orders={"response": RESPONSE_ORDER},
         points="all",
         title="Cell population % by response (melanoma, miraclib, PBMC)",
     )
     fig.update_yaxes(matches=None)
     fig.update_layout(width=1500, height=500)
     return fig
+
+
+def save_boxplot(df: pd.DataFrame, path) -> None:
+    """Render the same boxplot to a PNG with matplotlib (no browser needed).
+
+    One subplot per population, two boxes (no / yes) with the individual sample
+    points jittered on top; each subplot keeps its own y-scale.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")  # headless, file-only backend
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    fig, axes = plt.subplots(
+        1, len(POPULATIONS), figsize=(4 * len(POPULATIONS), 5)
+    )
+    rng = np.random.default_rng(0)
+
+    for ax, population in zip(axes, POPULATIONS):
+        pop = df[df["population"] == population]
+        groups = [
+            pop.loc[pop["response"] == r, "percentage"].to_numpy()
+            for r in RESPONSE_ORDER
+        ]
+
+        boxes = ax.boxplot(
+            groups, tick_labels=RESPONSE_ORDER, showfliers=False, patch_artist=True
+        )
+        for patch, r in zip(boxes["boxes"], RESPONSE_ORDER):
+            patch.set_facecolor(RESPONSE_COLORS[r])
+            patch.set_alpha(0.35)
+
+        for i, (r, vals) in enumerate(zip(RESPONSE_ORDER, groups), start=1):
+            ax.scatter(
+                rng.normal(i, 0.04, size=len(vals)), vals,
+                s=6, color=RESPONSE_COLORS[r], alpha=0.5, linewidths=0,
+            )
+
+        ax.set_title(population)
+        ax.set_xlabel("response")
+
+    axes[0].set_ylabel("percentage")
+    fig.suptitle("Cell population % by response (melanoma, miraclib, PBMC)")
+    fig.tight_layout()
+    fig.savefig(path, dpi=110)
+    plt.close(fig)
 
 
 def run_significance_tests(df: pd.DataFrame) -> pd.DataFrame:
@@ -115,12 +169,8 @@ def run_stats():
         fh.write(summary + "\n")
     print(f"\nWrote {RESPONDER_SUMMARY_PATH}")
 
-    try:
-        fig = make_boxplot(df)
-        fig.write_image(BOXPLOT_PATH)
-        print(f"\nWrote {BOXPLOT_PATH}")
-    except Exception as exc:
-        print(f"\nSkipped {BOXPLOT_PATH}: {exc}\n")
+    save_boxplot(df, BOXPLOT_PATH)
+    print(f"\nWrote {BOXPLOT_PATH}")
 
 
 if __name__ == "__main__":
