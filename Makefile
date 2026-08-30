@@ -10,11 +10,15 @@ setup:
 	$(PYTHON) -m pip install -r requirements.txt
 
 # Full pipeline, start to finish, no manual intervention.
-#   load_data.py               Part 1  - build + populate cell_counts.db
+#   load_data.py                 Part 1  - build + populate cell_counts.db
 #   src.analysis.freq_analysis   Part 2  - output/part2_frequency_table.csv
-#   src.analysis.responder_stats Part 3  - output/part3_stats_results.csv, part3_boxplot.png, part3_responder_summary.txt
+#   src.analysis.responder_stats Part 3  - responders vs non-responders per cell
+#                                          population at each timepoint (t=0, 7, 14):
+#                                          output/part3_stats_results.csv,
+#                                          part3_responder_summary.txt,
+#                                          part3_boxplot_t0.png / _t7.png / _t14.png
 #   src.analysis.subset_analysis Part 4a - output/part4_baseline_subset.csv, part4_baseline_summary.txt
-#   src.analysis.avg_bcell       Part 4b - output/part4_avg_bcell.txt
+#   src.analysis.avg_bcell       Part 4b - output/avg_bcell.txt
 pipeline:
 	$(PYTHON) load_data.py
 	$(PYTHON) -m src.analysis.freq_analysis

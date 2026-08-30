@@ -28,7 +28,7 @@ accumulate.
 |---|---|---|
 | Part 1 | `python load_data.py` | `cell_counts.db` (SQLite, repo root) |
 | Part 2 | `python -m src.analysis.freq_analysis` | `output/part2_frequency_table.csv` |
-| Part 3 | `python -m src.analysis.responder_stats` | `output/part3_stats_results.csv`, `output/part3_responder_summary.txt`, `output/part3_boxplot.png` |
+| Part 3 | `python -m src.analysis.responder_stats` | `output/part3_stats_results.csv`, `output/part3_responder_summary.txt`, `output/part3_boxplot_t0.png`, `output/part3_boxplot_t7.png`, `output/part3_boxplot_t14.png` |
 | Part 4a | `python -m src.analysis.subset_analysis` | `output/part4_baseline_subset.csv`, `output/part4_baseline_summary.txt` |
 | Part 4b | `python -m src.analysis.avg_bcell` | `output/avg_bcell.txt` |
 
@@ -39,9 +39,11 @@ pipeline. The dashboard rebuilds the database on first run if it is missing, so
 ### Headline results (current dataset)
 
 - **Part 2:** 52,500 rows = 10,500 samples × 5 populations.
-- **Part 3:** only `cd4_t_cell` differs between responders and non-responders at
-  raw *p* < 0.05 (*p* = 0.013); nothing survives a Bonferroni correction, so it
-  is suggestive, not conclusive.
+- **Part 3:** tested per timepoint (t = 0, 7, 14), one row per population ×
+  timepoint in `part3_stats_results.csv`. At raw *p* < 0.05: `cd4_t_cell` at
+  t = 7 (*p* = 0.030) and `b_cell` at t = 14 (*p* = 0.014); nothing at t = 0.
+  Nothing survives a Bonferroni correction across all 15 tests, so these are
+  suggestive, not conclusive.
 - **Part 4a:** 656 baseline samples / 656 subjects — `prj1` 384, `prj3` 272;
   responders 331, non-responders 325; female 312, male 344.
 - **Part 4b:** average baseline B-cell count for melanoma male responders =
@@ -94,7 +96,7 @@ src/
   helpers.py                 QueryHelper interface + one class per SQL query
   analysis/
     freq_analysis.py         Part 2  runner -> part2_frequency_table.csv
-    responder_stats.py       Part 3  Mann-Whitney U per population + boxplot
+    responder_stats.py       Part 3  Mann-Whitney U per population × timepoint + boxplots
     subset_analysis.py       Part 4a baseline subset breakdowns
     avg_bcell.py             Part 4b average baseline B-cell count
   dashboard.py               Streamlit app (Parts 2-4) — wiring only, no analysis logic
@@ -117,9 +119,10 @@ output/                      generated artifacts (git-ignored)
 
 
 ### Statistical choice (Part 3)
+We compare responders vs. non-responders separately for each of the 5 cell populations, using the Mann Whitney U test. We run this separately at each of the three sampling timepoints (0, 7, and 14 days from treatment start).
 
-We compare responders vs. non-responders separately for each of the 5 cell populations, using the Mann Whitney U test.
+We split the analysis by timepoint because each subject contributes a sample at all three timepoints, and their response label stays the same across all three. If we pooled every timepoint into one test, we would be counting the same subject three times instead of once, which makes the results look more confident than they really are.
 
-This test doesn't assume the data follows a normal distribution. That's a safe choice since cell percentages are bounded between 0 and 100 and tend to be skewed. It's also not easily thrown off by outliers.
+This test does not assume the data follows a normal distribution. That is a safe choice since cell percentages are bounded between 0 and 100 and tend to be skewed. It is also not easily thrown off by outliers.
 
-Since we're running 5 separate tests, one per population, there's a higher chance that at least one shows a significant result just by chance. To guard against this, we multiply each p value by 5, capping at 1.0. This is called a Bonferroni correction. It's a conservative way of saying don't trust a result unless it still looks significant even after accounting for the fact that we ran multiple tests.
+Since we are running 5 populations across 3 timepoints, that is 15 separate tests in total, and there is a higher chance that at least one shows a significant result just by chance. To guard against this, we multiply each p value by 15, capping at 1.0. This is called a Bonferroni correction. It is a conservative way of saying we should trust a result only if it still looks significant even after accounting for the fact that we ran many tests.
