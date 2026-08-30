@@ -58,7 +58,7 @@ class ResponderComparison(QueryHelper):
         freq = FrequencyTable().run(conn)
         meta = pd.read_sql(
             """
-            SELECT s.sample_id AS sample, e.response AS response
+            SELECT s.sample_id AS sample, e.response AS response, s.time_from_treatment_start as time_from_treatment_start
             FROM Sample s
             JOIN Enrollment e ON e.project_id = s.project_id
                              AND e.subject_id = s.subject_id

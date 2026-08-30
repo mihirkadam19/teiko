@@ -26,7 +26,14 @@ from src.helpers import (
     ResponderComparison,
 )
 from src.paths import DB_PATH
-from src.analysis.responder_stats import ALPHA, make_boxplot, run_significance_tests
+from src.analysis.responder_stats import (
+    ALPHA,
+    N_TESTS,
+    POPULATIONS,
+    TIMEPOINTS,
+    make_boxplot,
+    run_significance_tests,
+)
 from src.analysis.subset_analysis import summarize_baseline_subset
 from src.paths import DB_PATH
 
@@ -142,43 +149,85 @@ with tab_responder:
     )
 
     df = responder_data()
-    n_resp = df.loc[df["response"] == "yes", "sample"].nunique()
-    n_non = df.loc[df["response"] == "no", "sample"].nunique()
+    stats = significance_table()
 
-    st.subheader("Distribution by response")
+    st.markdown(
+        "The analysis is run separately at each of the three sampling "
+        f"timepoints ({', '.join(f't={t}' for t in TIMEPOINTS)} days from "
+        "treatment start), so each subject contributes at most one observation "
+        "per test. Pick a timepoint below to inspect its distributions and test "
+        "results; the Bonferroni column is corrected across **all** "
+        f"{N_TESTS} tests ({len(POPULATIONS)} populations x {len(TIMEPOINTS)} "
+        "timepoints)."
+    )
+
+    timepoint = st.radio(
+        "Timepoint (days from treatment start)",
+        TIMEPOINTS,
+        horizontal=True,
+        format_func=lambda t: f"t = {t}",
+    )
+
+    tp_df = df[df["time_from_treatment_start"] == timepoint]
+    tp_stats = stats[stats["timepoint"] == timepoint]
+    n_resp = tp_df.loc[tp_df["response"] == "yes", "sample"].nunique()
+    n_non = tp_df.loc[tp_df["response"] == "no", "sample"].nunique()
+
+    st.subheader(f"Distribution by response (t = {timepoint})")
     st.markdown(
         f"One box per population, split by response "
-        f"(**{n_resp:,}** responder samples vs **{n_non:,}** non responder). "
-        "Each y axis is that population's own percentage scale (every sample is "
-        "drawn as a point over the box.)"
+        f"(**{n_resp:,}** responder samples vs **{n_non:,}** non responder at "
+        f"this timepoint). Each y axis is that population's own percentage scale "
+        "(every sample is drawn as a point over the box.)"
     )
-    st.plotly_chart(make_boxplot(df), width="stretch")
+    st.plotly_chart(make_boxplot(tp_df, timepoint), width="stretch")
 
-    st.subheader("Mann Whitney U test per population")
+    st.subheader(f"Mann Whitney U test per population (t = {timepoint})")
     st.markdown(
         "Test comparing the two groups' percentage "
         "distributions (no normality assumption). Columns: `statistic` = U, "
         "`p_value` = raw significance, `significant` = `p_value < "
-        f"{ALPHA}`, `p_value_bonferroni` = p x 5 for the 5 populations tested "
-        "(conservative guard against false positives from multiple testing)."
+        f"{ALPHA}`, `p_value_bonferroni` = p x {N_TESTS} "
+        f"({len(POPULATIONS)} populations x {len(TIMEPOINTS)} timepoints, "
+        "a conservative guard against false positives from multiple testing)."
     )
-    stats = significance_table()
-    st.dataframe(stats, width="stretch", hide_index=True)
+    st.dataframe(
+        tp_stats.drop(columns="timepoint"), width="stretch", hide_index=True
+    )
 
-    sig = stats.loc[stats["significant"], "population"].tolist()
-    sig_bonf = stats.loc[stats["p_value_bonferroni"] < ALPHA, "population"].tolist()
+    sig = tp_stats.loc[tp_stats["significant"], "population"].tolist()
+    sig_bonf = tp_stats.loc[
+        tp_stats["p_value_bonferroni"] < ALPHA, "population"
+    ].tolist()
     if sig:
         st.markdown(
-            f"**Significant at raw p < {ALPHA}: {', '.join(sig)}.** "
+            f"t = {timepoint} significant at raw p < {ALPHA}: "
+            f"{','.join(sig)}.\n\n"
             + (
                 f"Survives Bonferroni correction: {', '.join(sig_bonf)}."
                 if sig_bonf
                 else "None survive Bonferroni correction, so treat this as "
-                "suggestive, not conclusive, a larger cohort is needed."
+                "suggestive, not conclusive, more data is needed."
             )
         )
     else:
-        st.markdown(f"**No population significant at p < {ALPHA}.**")
+        st.markdown(
+            f"**t = {timepoint} no population significant at p < {ALPHA}.**"
+        )
+
+    with st.expander("All timepoints at once"):
+        st.dataframe(stats, width="stretch", hide_index=True)
+        for t in TIMEPOINTS:
+            t_stats = stats[stats["timepoint"] == t]
+            hits = t_stats.loc[t_stats["significant"], "population"].tolist()
+            bonf = t_stats.loc[
+                t_stats["p_value_bonferroni"] < ALPHA, "population"
+            ].tolist()
+            st.markdown(
+                f"- **t = {t}**: raw p < {ALPHA}: "
+                f"{', '.join(hits) if hits else 'none'}; "
+                f"after Bonferroni: {', '.join(bonf) if bonf else 'none'}."
+            )
 
 
 # ---- Part 4 -------------------------------------------------------------
